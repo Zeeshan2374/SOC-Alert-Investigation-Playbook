@@ -4,6 +4,8 @@ A structured learning and portfolio repository for SOC analysts. Each scenario h
 - `<Alert-Name>.md` — detailed alert/attack explanation, triage workflow, evidence checklist, possible conclusions, response guidance and interview practice.
 - `<Alert-Name>KQL.kql` — investigation queries followed by a **Master KQL** section at the end.
 
+**Author:** Zeeshan Alam · [LinkedIn](https://www.linkedin.com/in/zeeshanalam21/) · [GitHub](https://github.com/Zeeshan2374)
+
 ## Repository principles
 - An alert is an investigation lead, not automatic proof of compromise.
 - Query schemas and fields vary by Microsoft Sentinel workspace, Defender XDR tables, licensing and data ingestion. Validate queries before operational use.
@@ -45,3 +47,7 @@ A structured learning and portfolio repository for SOC analysts. Each scenario h
 
 ## Disclaimer
 These materials are for education and authorized defensive security work. They are not a substitute for your organisation's incident-response policy or Microsoft documentation.
+
+## Connect with me
+- LinkedIn: [linkedin.com/in/zeeshanalam21](https://www.linkedin.com/in/zeeshanalam21/)
+- GitHub: [github.com/Zeeshan2374](https://github.com/Zeeshan2374)
