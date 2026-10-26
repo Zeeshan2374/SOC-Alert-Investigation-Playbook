@@ -1,0 +1,71 @@
+// Threat Intelligence IP Match in Sign-in Logs — investigation queries
+// Intended data source: SigninLogs
+// Validate table/column availability, permissions and schema in your tenant.
+// Replace sample values and tune lookback windows before operational use.
+// Alert indicators require investigation; they do not alone prove compromise.
+
+// -----------------------------------------------------------------------------
+// 1. Initial investigation — retrieve relevant events
+// -----------------------------------------------------------------------------
+SigninLogs
+| where TimeGenerated > ago(7d)
+| where IPAddress == '203.0.113.10'
+| project TimeGenerated, UserPrincipalName, IPAddress, Location, AppDisplayName,
+          ResultType, ResultDescription, IsInteractive, ConditionalAccessStatus,
+          RiskLevelDuringSignIn, RiskState, DeviceDetail, UserAgent
+| order by TimeGenerated desc
+
+// -----------------------------------------------------------------------------
+// 2. Pivot — review activity volume / related entities
+// Adapt the grouping to the entity and fields available in your environment.
+// -----------------------------------------------------------------------------
+SigninLogs
+| where TimeGenerated > ago(7d)
+| summarize EventCount=count(), FirstSeen=min(TimeGenerated), LastSeen=max(TimeGenerated)
+    by bin(TimeGenerated, 1h)
+| order by TimeGenerated desc
+
+// -----------------------------------------------------------------------------
+// 3. Review the wider timeline
+// -----------------------------------------------------------------------------
+SigninLogs
+| where TimeGenerated > ago(30d)
+| where IPAddress == '203.0.113.10'
+| project TimeGenerated
+| order by TimeGenerated desc
+
+// ============================================================================
+// MASTER KQL — CONSOLIDATED TRIAGE QUERY
+// This final query is a single starting point for a broad investigation.
+// It does not replace platform-specific pivots that require separate tables.
+// ============================================================================
+let Lookback = 7d;
+let TargetUser = "user@company.com";
+SigninLogs
+| where TimeGenerated > ago(Lookback)
+| where UserPrincipalName =~ TargetUser
+| extend Country = tostring(LocationDetails.countryOrRegion),
+         City = tostring(LocationDetails.city),
+         DeviceName = tostring(DeviceDetail.displayName),
+         OS = tostring(DeviceDetail.operatingSystem),
+         Browser = tostring(DeviceDetail.browser),
+         IsSuccessful = (ResultType == 0)
+| sort by TimeGenerated asc
+| serialize
+| extend PreviousTime = prev(TimeGenerated),
+         PreviousIP = prev(IPAddress),
+         PreviousCountry = prev(Country),
+         MinutesSincePrevious = datetime_diff("minute", TimeGenerated, prev(TimeGenerated))
+| project TimeGenerated, UserPrincipalName, IsSuccessful, ResultType, ResultDescription,
+          IPAddress, Country, City, PreviousTime, PreviousIP, PreviousCountry,
+          MinutesSincePrevious, AppDisplayName, IsInteractive, ConditionalAccessStatus,
+          RiskLevelDuringSignIn, RiskState, DeviceName, OS, Browser, UserAgent
+| order by TimeGenerated asc
+
+// Master investigation checklist:
+// 1. Confirm affected entities, timestamp and event outcome.
+// 2. Validate source context and legitimate business explanations.
+// 3. Correlate with relevant identity, endpoint, email, network or cloud telemetry.
+// 4. Check scope and related entities; document telemetry gaps.
+// 5. Classify as benign, suspicious or potential compromise based on evidence.
+// 6. Follow organisational escalation and response procedures.
